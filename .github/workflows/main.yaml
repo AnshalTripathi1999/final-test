@@ -1,5 +1,4 @@
 name: combine1
-
 on:
   push:
     branches:
