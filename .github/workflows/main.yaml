@@ -2,7 +2,7 @@ name: combine1
 on:
   push:
     branches:
-      - main  # Adjust this to match the branch you want to trigger the workflow for
+      - master # Adjust this to match the branch you want to trigger the workflow for
 
 jobs:
   deploy:
@@ -23,3 +23,5 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
         AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+
