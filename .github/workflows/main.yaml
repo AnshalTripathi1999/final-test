@@ -2,10 +2,10 @@ name: combine1
 on:
   push:
     branches:
-      - master # Adjust this to match the branch you want to trigger the workflow for
+      - main # Adjust this to match the branch you want to trigger the workflow for
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
