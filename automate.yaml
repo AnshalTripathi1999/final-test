@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  SourceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: prj-ingestion-bucket
+
+  DestinationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: prj-transformation-bucket
+
+  IngestionGlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-ingestion-job
+      Role: arn:aws:iam::234578692179:role/LabRole
+      GlueVersion: 4.0
+      Command:
+        Name: glueetl
+        ScriptLocation: s3://grp-6-py-scripts/test.py
+      DefaultArguments:
+        "--job-language": "python"
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+
+  TransformationGlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-transformation-job
+      Role: arn:aws:iam::234578692179:role/LabRole
+      GlueVersion: 4.0
+      Command:
+        Name: glueetl
+        ScriptLocation: s3://grp-6-py-scripts/test1.py
+      DefaultArguments:
+        "--job-language": "python"
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
