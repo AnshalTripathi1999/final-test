@@ -1,0 +1,33 @@
+CrimeWorkflow:
+  Type: AWS::Glue::Workflow
+  Properties:
+    DefaultRunProperties: Json
+    Description: The aim of this workflow is to automate ETL of crime data
+    Name: crime-workflow
+
+Data-ingestion Trigger:
+  Type: AWS::Glue::Trigger
+  Properties:
+    Actions:
+      JobName: my-ingestion-job
+      Timeout: 30
+    Description: This is first trigger to start job ingestion job
+    Name: Start-Ingestion
+    Type: ON_DEMAND
+    WorkflowName: crime-workflow
+
+Data-preprocess Trigger:
+  Type: AWS::Glue::Trigger
+  Properties:
+    Actions:
+      JobName: my-transformation-job
+      Timeout: 30
+    Description: This is second trigger to start pre processing job
+    Name: start-preprocessing
+    Predicate:
+      JobName: my-ingestion-job
+      LogicalOperator: EQUALS
+      State: SUCCEEDED
+    StartOnCreation: True
+    Type: EVENT
+    WorkflowName: crime-workflow

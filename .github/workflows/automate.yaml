@@ -4,12 +4,12 @@ Resources:
   SourceBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: prj-ingestion-bucket
+      BucketName: grp6vitadatalake
 
   DestinationBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: prj-transformation-bucket
+      BucketName: Warehousebucketgrp6-vita
 
   IngestionGlueJob:
     Type: AWS::Glue::Job
@@ -19,7 +19,7 @@ Resources:
       GlueVersion: 4.0
       Command:
         Name: glueetl
-        ScriptLocation: s3://grp-6-py-scripts/test.py
+        ScriptLocation: s3://grp-6-py-scripts/ingesion_script.py
       DefaultArguments:
         "--job-language": "python"
       ExecutionProperty:
@@ -38,3 +38,44 @@ Resources:
         "--job-language": "python"
       ExecutionProperty:
         MaxConcurrentRuns: 1
+
+  CrimeWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties:
+      DefaultRunProperties: Json
+      Description: The aim of this workflow is to automate ETL of crime data
+      Name: crime-workflow
+
+  Data-ingestion Trigger:
+    DependsOn:
+      - IngestionGlueJob
+      - CrimeWorkflow
+    Type: AWS::Glue::Trigger
+    Properties:
+      Actions:
+        JobName: my-ingestion-job
+        Timeout: 30
+      Description: This is first trigger to start job ingestion job
+      Name: Start-Ingestion
+      Type: ON_DEMAND
+      WorkflowName: crime-workflow
+
+  Data-preprocess Trigger:
+    DependsOn:
+      - IngestionGlueJob
+      - CrimeWorkflow
+      - TransformationGlueJob
+    Type: AWS::Glue::Trigger
+    Properties:
+      Actions:
+        JobName: my-transformation-job
+        Timeout: 30
+      Description: This is second trigger to start pre processing job
+      Name: start-preprocessing
+      Predicate:
+        JobName: my-ingestion-job
+        LogicalOperator: EQUALS
+        State: SUCCEEDED
+      StartOnCreation: True
+      Type: EVENT
+      WorkflowName: crime-workflow
