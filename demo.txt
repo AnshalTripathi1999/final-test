@@ -1,0 +1,45 @@
+labRole:
+    Type: String
+    Description: Enter the LabRole ARN
+    Default: "arn:aws:iam::234578692179:role/LabRole"
+
+s3datalake:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: grp6-data-lake
+      VersioningConfiguration:
+        Status: Suspended
+
+s3warehouse:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: grp6-data-ware
+
+GlueJobImportRDS:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-ingestion-job
+      Description: Ingests data from RDS and writes it as a parquet file to the data lake
+      GlueVersion: 4.0
+      MaxRetries: 0
+      NumberOfWorkers: 4
+      Role: !Ref labRole
+      Timeout: 60
+      WorkerType: G.1X
+      Command:
+        Name: glueetl
+        ScriptLocation: "s3://grp-6-py-scripts/ingesion_script.py"
+
+IngestionGlueJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: my-ingestion-job
+      Role: arn:aws:iam::234578692179:role/LabRole
+      GlueVersion: 4.0
+      Command:
+        Name: glueetl
+        ScriptLocation: s3://grp-6-py-scripts/ingesion_script.py
+      ExecutionProperty:
+        MaxConcurrentRuns: 1

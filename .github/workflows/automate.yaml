@@ -4,17 +4,17 @@ Resources:
   SourceBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: grp6vitadatalake
+      BucketName: grp6-datalakexxx
 
   DestinationBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: Warehousebucketgrp6-vita
+      BucketName: grp6-datawarexxx
 
   IngestionGlueJob:
     Type: AWS::Glue::Job
     Properties:
-      Name: my-ingestion-job
+      Name: crime-ingestion
       Role: arn:aws:iam::234578692179:role/LabRole
       GlueVersion: 4.0
       Command:
@@ -28,54 +28,71 @@ Resources:
   TransformationGlueJob:
     Type: AWS::Glue::Job
     Properties:
-      Name: my-transformation-job
+      Name: crime-transformation
       Role: arn:aws:iam::234578692179:role/LabRole
       GlueVersion: 4.0
       Command:
         Name: glueetl
-        ScriptLocation: s3://grp-6-py-scripts/test1.py
+        ScriptLocation: s3://grp-6-py-scripts/street n outcome pre process.py
       DefaultArguments:
         "--job-language": "python"
       ExecutionProperty:
         MaxConcurrentRuns: 1
 
-  CrimeWorkflow:
+  GlueWorkflow:
     Type: AWS::Glue::Workflow
-    Properties:
-      DefaultRunProperties: Json
-      Description: The aim of this workflow is to automate ETL of crime data
-      Name: crime-workflow
-
-  Data-ingestion Trigger:
     DependsOn:
+      - SourceBucket
+      - DestinationBucket
       - IngestionGlueJob
-      - CrimeWorkflow
-    Type: AWS::Glue::Trigger
-    Properties:
-      Actions:
-        JobName: my-ingestion-job
-        Timeout: 30
-      Description: This is first trigger to start job ingestion job
-      Name: Start-Ingestion
-      Type: ON_DEMAND
-      WorkflowName: crime-workflow
-
-  Data-preprocess Trigger:
-    DependsOn:
-      - IngestionGlueJob
-      - CrimeWorkflow
       - TransformationGlueJob
+    Properties:
+      Description: ETL Job
+      MaxConcurrentRuns: 1
+      Name: myworkflow
+
+  GlueTriggerImport:
     Type: AWS::Glue::Trigger
+    DependsOn:
+      - GlueWorkflow
+      - IngestionGlueJob
     Properties:
       Actions:
-        JobName: my-transformation-job
-        Timeout: 30
-      Description: This is second trigger to start pre processing job
-      Name: start-preprocessing
+        - JobName: !Ref IngestionGlueJob
+      Description: Triggers the Import Jobs
+      Name: gluetriggerimport
+      Type: ON_DEMAND
+      WorkflowName: myworkflow
+
+  GlueTriggerImport:
+    Type: AWS::Glue::Trigger
+    DependsOn:
+      - GlueWorkflow
+      - TransformationGlueJob
+    Properties:
+      Actions:
+        - JobName: !Ref IngestionGlueJob
+      Description: Triggers the Import Jobs
+      Name: gluetriggerimport
+      Type: ON_DEMAND
+      WorkflowName: myworkflow
+
+  GlueTriggerTransform:
+    Type: AWS::Glue::Trigger
+    DependsOn:
+      - GlueWorkflow
+      - TransformationGlueJob
+      - GlueTriggerImport
+    Properties:
+      Actions:
+        - JobName: !Ref TransformationGlueJob
+      Description: Triggers the Import Jobs
+      Name: gluetriggertransform
       Predicate:
-        JobName: my-ingestion-job
-        LogicalOperator: EQUALS
-        State: SUCCEEDED
-      StartOnCreation: True
-      Type: EVENT
-      WorkflowName: crime-workflow
+        Conditions:
+          - JobName: !Ref IngestionGlueJob
+            LogicalOperator: EQUALS
+            State: SUCCEEDED
+        Logical: AND
+      Type: CONDITIONAL
+      WorkflowName: myworkflow
